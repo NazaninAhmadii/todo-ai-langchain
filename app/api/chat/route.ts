@@ -4,6 +4,7 @@ import { tool } from '@langchain/core/tools'
 import { HumanMessage, AIMessage } from '@langchain/core/messages'
 import { z } from 'zod'
 import type { Todo } from '@/types/todo'
+import { TodoItemSchema } from '@/types/todo'
 
 // Force Node.js runtime — LangChain has Node.js dependencies.
 export const runtime = 'nodejs'
@@ -167,16 +168,7 @@ function buildTools(todos: Todo[], emit: Emitter) {
       description:
         'Analyze todos by urgency: overdue, due today, upcoming, or no due date. Returns a summary.',
       schema: z.object({
-        todos: z
-          .array(
-            z.object({
-              id: z.string(),
-              title: z.string(),
-              completed: z.boolean(),
-              dueDate: z.string().optional(),
-            }),
-          )
-          .describe('The todos to analyze — pass the full current list'),
+        todos: z.array(TodoItemSchema).describe('The todos to analyze — pass the full current list'),
       }),
     },
   )
@@ -203,9 +195,7 @@ export async function POST(req: Request) {
     await writer.write(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
   }
 
-  // Capture current time before building the system prompt.
-  const currentTime = new Date()
-  const today = currentTime.toISOString().split('T')[0]
+  const today = new Date().toISOString().split('T')[0]
 
   const todosText =
     todos.length === 0
@@ -219,21 +209,20 @@ export async function POST(req: Request) {
           )
           .join('\n')
 
-  // messageModifier injects a system message at the start of every agent step.
-  // The LLM sees this context before deciding what to do.
+  // Static content first so Anthropic can cache that prefix across requests.
+  // Dynamic content (date, todos) goes at the end where it can change freely.
   const systemPrompt = `You are a concise, helpful todo assistant.
-
-Current time: ${currentTime.toISOString()}
-Today's date: ${today}
-
-Current todo list:
-${todosText}
 
 Rules:
 - Use tools to act on todos. Never describe an action without doing it.
 - After acting, confirm briefly (one sentence).
 - When the user asks about deadlines or urgency, use check_deadlines.
-- Use list_todos before acting if you need to find an id.`
+- Use list_todos before acting if you need to find an id.
+
+Today's date: ${today}
+
+Current todo list:
+${todosText}`
 
   const model = new ChatOpenAI({
     model: 'claude-sonnet-4-5',

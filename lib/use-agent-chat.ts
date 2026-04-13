@@ -2,19 +2,9 @@
 
 import { useState, useCallback } from 'react'
 import { useTodoStore } from './store'
-import type { Todo } from '@/types/todo'
+import type { Todo, DeadlineResult } from '@/types/todo'
 
 // ── Types ────────────────────────────────────────────────────────────────────
-
-// The shape of a deadline analysis returned by the check_deadlines tool.
-export type DeadlineResult = {
-  analyzedAt: string
-  summary: { overdue: number; dueToday: number; upcoming: number; noDueDate: number }
-  overdue: { id: string; title: string; dueDate?: string }[]
-  dueToday: { id: string; title: string; dueDate?: string }[]
-  upcoming: { id: string; title: string; dueDate?: string }[]
-  noDueDate: { id: string; title: string; dueDate?: string }[]
-}
 
 export type ChatMessage = {
   id: string

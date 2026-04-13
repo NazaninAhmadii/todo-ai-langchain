@@ -1,7 +1,7 @@
 // Generative UI component — rendered when the AI calls check_deadlines.
 // The AI decides WHEN to show this; this component decides HOW it looks.
 
-import type { DeadlineResult } from '@/lib/use-agent-chat'
+import type { DeadlineResult } from '@/types/todo'
 
 export function DeadlineCard({ result }: { result: DeadlineResult }) {
   const time = new Date(result.analyzedAt).toLocaleString('en-US', {
